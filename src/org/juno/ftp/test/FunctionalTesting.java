@@ -5,7 +5,7 @@ import org.juno.ftp.core.FTPServer;
 import org.juno.ftp.log.LogUtil;
 
 public class FunctionalTesting {
-	
+	FTPServer ftpServer = new FTPServer();
 	@Test
 	public void testLogger() {
 		LogUtil.info("info message testing");
@@ -14,8 +14,13 @@ public class FunctionalTesting {
 	
 	@Test
 	public void testFTPServerCreation() {
-		FTPServer ftpServer = new FTPServer();
 		ftpServer.start();
 	}
-
+	
+	@Test
+	public void testClientConnectionInConcurrency() {
+		// TODO
+		ExecutorService
+	}
+	
 }
