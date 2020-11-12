@@ -21,7 +21,7 @@ import org.juno.ftp.log.LogUtil;
 public class FTPServer {
 	
 	private volatile static boolean started = false;
-	private final int PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
+	private final static int PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
 	private final int backlog = 50;
 	private static Selector selector;
 	private static final String HOST = "localhost";
@@ -32,7 +32,7 @@ public class FTPServer {
 	public FTPServer() {
 		try {
 			validHostAddress();
-			//运行acceport的线程池
+			//运行acceptor的线程池
 			executor = Executors.newCachedThreadPool();
 			selector = Selector.open();
 		} catch (IOException e) {
@@ -63,7 +63,7 @@ public class FTPServer {
 			e.printStackTrace();
 		}
 		
-		LogUtil.info("FTPServer instance start with port: " + PORT);
+		
 	}
 	//验证IP和主机名
 	private void validHostAddress() throws UnknownHostException {
@@ -80,7 +80,7 @@ public class FTPServer {
 
 		@Override
 		public void run() {
-		
+			LogUtil.info("NioAcceptor thread " + Thread.currentThread().getName() + " is listening on port: " + PORT);
 			while(started) {
 				int selected = 0;
 				try {
@@ -98,6 +98,8 @@ public class FTPServer {
 								socketChannel.configureBlocking(false);
 								socketChannel.register(selector, SelectionKey.OP_READ);
 								LogUtil.info(socketChannel.getRemoteAddress() + " connected.");
+								//创建新的session
+								NioSession nioSession = new NioSession(socketChannel);
 							}
 						}
 					}
