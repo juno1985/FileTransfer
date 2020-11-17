@@ -57,6 +57,7 @@ public class FTPClient {
 			_inputline = scan.nextLine();
 			_inputline = ClientStringBuilder.stringBuilder(_inputline);
 			bufferedOutput.write(_inputline.getBytes());
+			bufferedOutput.flush();
 		}
 	}
 	
