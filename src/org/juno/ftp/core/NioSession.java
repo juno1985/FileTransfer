@@ -19,6 +19,18 @@ public class NioSession {
 		}
 		LogUtil.info("New session created from " + this.clientAddress);
 	}
+	public SocketChannel getSocketChannel() {
+		return socketChannel;
+	}
+	public void setSocketChannel(SocketChannel socketChannel) {
+		this.socketChannel = socketChannel;
+	}
+	public SocketAddress getClientAddress() {
+		return clientAddress;
+	}
+	public void setClientAddress(SocketAddress clientAddress) {
+		this.clientAddress = clientAddress;
+	}
 	
 	
 

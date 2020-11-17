@@ -18,6 +18,7 @@ public class FunctionalTesting {
 		LogUtil.warning("warning message testing");
 	}
 	
+	
 	@Test
 	public void testFTPServerCreation() {
 		
@@ -25,6 +26,16 @@ public class FunctionalTesting {
 			ftpServer.start();
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testClientConnect() {
+		FTPClient client = new FTPClient();
+		try {
+			client.connect();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

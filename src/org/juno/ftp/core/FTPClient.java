@@ -1,36 +1,72 @@
 package org.juno.ftp.core;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
+
+import org.juno.ftp.com.PropertiesUtil;
 
 public class FTPClient {
 
-	private final String HOST = "127.0.0.1"; // 服务器的ip
-	private final int PORT = 21; // 服务器端口
-	private Selector selector;
-	private SocketChannel socketChannel;
+	private final String HOST; // 服务器的ip
+	private final int PORT; // 服务器端口
+	private Socket socket;
+	private InputStream inputStream;
+	private OutputStream outputStream;
+	private BufferedOutputStream bufferedOutput;
+	private Scanner scan;
+	CRLFLineReader lineReader;
 
 	public FTPClient() {
-
+		HOST = PropertiesUtil.getProperty("ftp.server.host");
+		PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
+		
 	}
 
 	public void connect() throws IOException {
-		// 得到一个网络通道
-		SocketChannel socketChannel = SocketChannel.open();
-		// 设置非阻塞
-		socketChannel.configureBlocking(false);
-		// 提供服务器端的ip 和 端口
-		InetSocketAddress inetSocketAddress = new InetSocketAddress("127.0.0.1", PORT);
-		// 连接服务器
-		if (!socketChannel.connect(inetSocketAddress)) {
 
-			while (!socketChannel.finishConnect()) {
-				System.out.println(Thread.currentThread().getName() + " 因为连接需要时间，客户端不会阻塞，可以做其它工作..");
-			}
+		try {
+			socket = new Socket("127.0.0.1", PORT);
+			inputStream = socket.getInputStream();
+			outputStream = socket.getOutputStream();
+			bufferedOutput = new BufferedOutputStream(outputStream);
+			lineReader = new CRLFLineReader(new InputStreamReader(inputStream, "UTF-8"));
+			String response = lineReader.readLine();
+			System.out.println(response);
+			
+			startInput();
+			
+		//	Worker worker = new Worker();
+			
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+	}
+	//启动输入
+	private void startInput() throws IOException {
+		this.scan = new Scanner(System.in);
+		String _inputline;
+		while(scan.hasNext()) {
+			_inputline = scan.nextLine();
+			_inputline = ClientStringBuilder.stringBuilder(_inputline);
+			bufferedOutput.write(_inputline.getBytes());
+		}
+	}
+	
+	static class Worker implements Runnable{
+
+		@Override
+		public void run() {
+			
+		}
+		
 	}
 
 }
