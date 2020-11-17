@@ -21,14 +21,6 @@ public class NioProcessorPool implements Runnable{
 		if(selector == null) {
 			try {
 				selector = Selector.open();
-				//ServerSocketChannel
-				ServerSocketChannel  listenChannel =  ServerSocketChannel.open();
-				   //绑定端口
-				listenChannel.socket().bind(new InetSocketAddress(FTPServer.PORT));
-	            //设置非阻塞模式
-	            listenChannel.configureBlocking(false);
-	            //将该listenChannel 注册到selector
-	            listenChannel.register(selector, SelectionKey.OP_READ);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -43,21 +35,23 @@ public class NioProcessorPool implements Runnable{
 		while(FTPServer.isStarted()) {
 			
 			if(FTPServer.newSession.get()) {
-				
-				for(NioSession session : FTPServer.sessionList) {
-					//这里需要判断已有的session是否已经加入监听
+				// 将新加入的channel注册
+				for(NioSession session : FTPServer.newSessionList) {
 					SocketChannel sc = session.getSocketChannel();
 					try {
 						sc.configureBlocking(false);
 						//将该 sc 注册到seletor
 	                    sc.register(selector, SelectionKey.OP_READ);
+	                    FTPServer.sessionList.add(session);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
                  
 				}
-				
+				// 清空新session
+				FTPServer.clearNewSessionList();
+				// 新session处理完毕，更改标志
 				FTPServer.newSession.getAndSet(Boolean.FALSE);
 			}
 			
@@ -70,6 +64,8 @@ public class NioProcessorPool implements Runnable{
 						if(key.isReadable()) {
 							readData(key);
 						}
+						//删除防止重复遍历
+						iterator.remove();
 					}
 				}
 				

@@ -32,9 +32,12 @@ public class FTPServer {
 	private ExecutorService executorAcceptor;
 	private ExecutorService executorProcessor;
 	private static ServerSocketChannel listenChannel;
+	private ServerSocket serverSocket;
 	public static volatile AtomicBoolean newSession = new AtomicBoolean(Boolean.FALSE);
 	//保存session集合
 	public static volatile CopyOnWriteArrayList<NioSession> sessionList = new CopyOnWriteArrayList<>();
+	//newly added session
+	public static volatile CopyOnWriteArrayList<NioSession> newSessionList = new CopyOnWriteArrayList<>();
 	
 	public FTPServer() {
 		try {
@@ -61,7 +64,7 @@ public class FTPServer {
 		try {
 			listenChannel = ServerSocketChannel.open();
 			
-			ServerSocket serverSocket = listenChannel.socket();
+			serverSocket = listenChannel.socket();
 			serverSocket.setReuseAddress(true);
 			serverSocket.bind(new InetSocketAddress(PORT), backlog);
 			listenChannel.configureBlocking(false);
@@ -92,6 +95,14 @@ public class FTPServer {
 		
 	}
 	
+	public ServerSocket getServerSocket() {
+		return serverSocket;
+	}
+	
+	public static void clearNewSessionList() {
+		newSessionList.clear();
+	}
+
 	static class NioAcceptor implements Runnable{
 
 		public NioAcceptor(String threadName) {
@@ -128,7 +139,7 @@ public class FTPServer {
 								
 								//创建新的session
 								NioSession nioSession = new NioSession(socketChannel);
-								sessionList.add(nioSession);
+								newSessionList.add(nioSession);
 								newSession.set(Boolean.TRUE);
 							}
 						}
