@@ -3,8 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
-	<classpathentry kind="lib" path="lib/ftplet-api-1.1.1.jar"/>
-	<classpathentry kind="lib" path="lib/ftpserver-core-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/ftplet-api-1.1.1.jar" sourcepath="D:/apache-maven-3.6.3/repo/org/apache/ftpserver/ftplet-api/1.1.1/ftplet-api-1.1.1-sources.jar"/>
+	<classpathentry kind="lib" path="lib/ftpserver-core-1.1.1.jar" sourcepath="D:/apache-maven-3.6.3/repo/org/apache/ftpserver/ftpserver-core/1.1.1/ftpserver-core-1.1.1-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mina-core-2.0.16.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-1.7.21.jar"/>
 	<classpathentry kind="output" path="bin"/>
