@@ -15,6 +15,9 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,10 +29,12 @@ public class FTPServer {
 	private volatile static boolean started = false;
 	final static int PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
 	private final int backlog = 50;
-	private static Selector selector;
+	private Selector selector;
 	private static final String HOST = "localhost";
 	private AtomicInteger acceptorId = new AtomicInteger();
+	//运行accept线程
 	private ExecutorService executorAcceptor;
+	//运行read线程
 	private ExecutorService executorProcessor;
 	private static ServerSocketChannel listenChannel;
 	private ServerSocket serverSocket;
@@ -44,11 +49,16 @@ public class FTPServer {
 			validHostAddress();
 			//运行acceptor的线程池
 			executorAcceptor = Executors.newCachedThreadPool();
+			//监听NIO READ线程池
+			int corePoolSize = 0;
+			int maxPoolSize = Runtime.getRuntime().availableProcessors();
+			executorProcessor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, 
+					10, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new JunoThreadFactory("NioProcessorPool"), new ThreadPoolExecutor.CallerRunsPolicy());
 			selector = Selector.open();
 		} catch (IOException e) {
 			LogUtil.warning(e.getMessage());
 			e.printStackTrace();
-		}
+		}	
 	}
 	
 	public static boolean isStarted() {
@@ -76,10 +86,6 @@ public class FTPServer {
 			executorAcceptor.submit(acceptor);
 			
 			started = true;
-			
-			//启动监听NIO READ线程
-			executorProcessor = Executors.newSingleThreadExecutor();
-			executorProcessor.submit(new NioProcessor());
 			
 			
 		} catch (IOException e) {
@@ -136,6 +142,8 @@ public class FTPServer {
 								ByteBuffer buffer = ByteBuffer.wrap(rep.getBytes());
 								socketChannel.write(buffer);
 							
+								//启动一个processor
+								executorProcessor.submit(new NioProcessor());
 								
 								//创建新的session
 								NioSession nioSession = new NioSession(socketChannel);

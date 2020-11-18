@@ -24,7 +24,7 @@ public class FunctionalTesting {
 		
 		try {
 			ftpServer.start();
-			Thread.sleep(2000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

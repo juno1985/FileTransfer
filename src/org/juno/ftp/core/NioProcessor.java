@@ -10,6 +10,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 
+import org.juno.ftp.log.LogUtil;
+
 public class NioProcessor implements Runnable{
 	
 	private static ExecutorService executor;
@@ -31,6 +33,8 @@ public class NioProcessor implements Runnable{
 
 	@Override
 	public void run() {
+		
+		LogUtil.info(Thread.currentThread().getName() + " started!");
 		
 		while(FTPServer.isStarted()) {
 			
