@@ -10,14 +10,14 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 
-public class NioProcessorPool implements Runnable{
+public class NioProcessor implements Runnable{
 	
 	private static ExecutorService executor;
 	private static Selector selector = null;
 	
 	
 	
-	public NioProcessorPool() {
+	public NioProcessor() {
 		if(selector == null) {
 			try {
 				selector = Selector.open();
@@ -121,10 +121,10 @@ public class NioProcessorPool implements Runnable{
 
 
 
-	static class NioProcessor implements Runnable{
+	private class NioWorker implements Runnable{
 		
 
-		public NioProcessor(String threadName) {
+		public NioWorker(String threadName) {
 			Thread.currentThread().setName(threadName);
 		}
 

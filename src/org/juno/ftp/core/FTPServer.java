@@ -79,7 +79,7 @@ public class FTPServer {
 			
 			//启动监听NIO READ线程
 			executorProcessor = Executors.newSingleThreadExecutor();
-			executorProcessor.submit(new NioProcessorPool());
+			executorProcessor.submit(new NioProcessor());
 			
 			
 		} catch (IOException e) {
@@ -103,7 +103,7 @@ public class FTPServer {
 		newSessionList.clear();
 	}
 
-	static class NioAcceptor implements Runnable{
+	private class NioAcceptor implements Runnable{
 
 		public NioAcceptor(String threadName) {
 			Thread.currentThread().setName(threadName);
