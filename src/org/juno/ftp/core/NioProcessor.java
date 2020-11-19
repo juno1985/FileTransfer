@@ -7,8 +7,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,7 +58,6 @@ public class NioProcessor implements Runnable{
 	                    sc.register(selector, SelectionKey.OP_READ, session);
 	                    FTPServer.sessionList.add(session);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
                  
@@ -114,7 +116,7 @@ public class NioProcessor implements Runnable{
 
 	//读取客户端消息
 	private void readData(SelectionKey key) {
-		//取到关联的channle
+		//取到关联的channel
         SocketChannel channel = null;
         NioSession session = null;
 
@@ -133,10 +135,11 @@ public class NioProcessor implements Runnable{
             if(count > 0) {
                 //把缓存区的数据转成字符串
                 String msg = new String(buffer.array());
-                
-                Stack<ChainFilter> chainStack = decoder(msg);
-                
-                executor.submit(new NioWorker(chainStack));
+                //创建任务流需要的resource
+                TaskResource taskResource = decoder(msg);
+                //创建任务流
+                Stack<ChainFilter> chainStack = forgeFilterChain(taskResource);
+                executor.submit(new NioWorker(chainStack, taskResource));
                 
                 //输出该消息
                 LogUtil.info("from client: " + session.getClientAddress() + " msg: " + msg);
@@ -163,21 +166,30 @@ public class NioProcessor implements Runnable{
 	}
 
 
-
-
-
-
-	private Stack<ChainFilter> decoder(String msg) {
-		
+	private Stack<ChainFilter> forgeFilterChain(TaskResource taskResource) {
 		Stack<ChainFilter> chainStack = new Stack<>();
+		if(taskResource.getWorkType() == WORKTYPE.LIST) {
+			//TODO 增加文件发送任务
+			//这里应该使用工厂创建对象
+			//这里应该把session传进每一个task
+			chainStack.add(new FileOperationFilter());
+		}
+		return chainStack;
+	}
+
+
+	private TaskResource decoder(String msg) {
+		
+	
 		if(msg.startsWith("$list")) {
 			String path = PropertiesUtil.getProperty("ftp.server.user.folder");
-			ChainFilter listTask = new FileOperationFilter(WORKTYPE.LIST, path);
-			chainStack.add(listTask);
+			List<Object> params = new ArrayList<>();
+			params.add(path);
+			TaskResource taskResource = new TaskResource(WORKTYPE.LIST, params);
+			return taskResource;
 		}
 		
-		return chainStack;
-		
+		return null;
 	}
 
 
@@ -185,22 +197,23 @@ public class NioProcessor implements Runnable{
 
 
 
-	private class NioWorker implements Runnable{
+	private class NioWorker implements Callable<TaskResource>{
 		
 		private Stack<ChainFilter> taskStack;
+		private TaskResource taskResource;
 
-		public NioWorker(Stack<ChainFilter> taskStack) {
+		public NioWorker(Stack<ChainFilter> taskStack, TaskResource taskResource ) {
 			this.taskStack = taskStack;
+			this.taskResource = taskResource;
 		}
 
 		@Override
-		public void run() {
-			
+		public TaskResource call() throws Exception {
 			while(!taskStack.isEmpty()) {
 				ChainFilter task = taskStack.pop();
-				task.doFilter();
+				task.doFilter(taskResource);
 			}
-			
+			return taskResource;
 		}
 		
 	}

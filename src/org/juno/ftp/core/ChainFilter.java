@@ -8,6 +8,6 @@ package org.juno.ftp.core;
  */
 public interface ChainFilter {
 	
-	Object doFilter();
+	void doFilter(TaskResource taskResource);
 
 }
