@@ -8,8 +8,11 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Stack;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.juno.ftp.com.PropertiesUtil;
 import org.juno.ftp.log.LogUtil;
 
 public class NioProcessor implements Runnable{
@@ -27,6 +30,7 @@ public class NioProcessor implements Runnable{
 				e.printStackTrace();
 			}
 		}
+		executor = Executors.newCachedThreadPool();
 		
 	}
 	
@@ -124,10 +128,16 @@ public class NioProcessor implements Runnable{
             ByteBuffer buffer = ByteBuffer.allocate(1024);
 
             int count = channel.read(buffer);
+                        
             //根据count的值做处理
             if(count > 0) {
                 //把缓存区的数据转成字符串
                 String msg = new String(buffer.array());
+                
+                Stack<ChainFilter> chainStack = decoder(msg);
+                
+                executor.submit(new NioWorker(chainStack));
+                
                 //输出该消息
                 LogUtil.info("from client: " + session.getClientAddress() + " msg: " + msg);
                 
@@ -157,15 +167,39 @@ public class NioProcessor implements Runnable{
 
 
 
+	private Stack<ChainFilter> decoder(String msg) {
+		
+		Stack<ChainFilter> chainStack = new Stack<>();
+		if(msg.startsWith("$list")) {
+			String path = PropertiesUtil.getProperty("ftp.server.user.folder");
+			ChainFilter listTask = new FileOperationFilter(WORKTYPE.LIST, path);
+			chainStack.add(listTask);
+		}
+		
+		return chainStack;
+		
+	}
+
+
+
+
+
+
 	private class NioWorker implements Runnable{
 		
+		private Stack<ChainFilter> taskStack;
 
-		public NioWorker(String threadName) {
-			Thread.currentThread().setName(threadName);
+		public NioWorker(Stack<ChainFilter> taskStack) {
+			this.taskStack = taskStack;
 		}
 
 		@Override
 		public void run() {
+			
+			while(!taskStack.isEmpty()) {
+				ChainFilter task = taskStack.pop();
+				task.doFilter();
+			}
 			
 		}
 		
