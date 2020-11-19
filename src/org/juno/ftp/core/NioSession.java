@@ -10,8 +10,10 @@ public class NioSession {
 	
 	private SocketChannel socketChannel;
 	private SocketAddress clientAddress;
+	private boolean isLogin;
 	public NioSession(SocketChannel socketChannel) {
 		this.socketChannel = socketChannel;
+		isLogin = Boolean.FALSE;
 		try {
 			this.clientAddress = socketChannel.getRemoteAddress();
 		} catch (IOException e) {
@@ -30,6 +32,12 @@ public class NioSession {
 	}
 	public void setClientAddress(SocketAddress clientAddress) {
 		this.clientAddress = clientAddress;
+	}
+	public boolean isLogin() {
+		return isLogin;
+	}
+	public void setLogin(boolean isLogin) {
+		this.isLogin = isLogin;
 	}
 	
 	

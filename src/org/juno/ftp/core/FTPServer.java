@@ -133,7 +133,6 @@ public class FTPServer {
 							if(key.isAcceptable()) {
 								SocketChannel socketChannel = listenChannel.accept();
 								socketChannel.configureBlocking(false);
-	//							socketChannel.register(selector, SelectionKey.OP_READ);
 								LogUtil.info(socketChannel.getRemoteAddress() + " connected.");
 								
 	//						向客户端返回链接成功

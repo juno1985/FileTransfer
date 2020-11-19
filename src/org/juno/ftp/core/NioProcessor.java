@@ -44,8 +44,11 @@ public class NioProcessor implements Runnable{
 					SocketChannel sc = session.getSocketChannel();
 					try {
 						sc.configureBlocking(false);
-						//将该 sc 注册到seletor
-	                    sc.register(selector, SelectionKey.OP_READ);
+						
+						init(session);
+						//将该 sc 注册到seletor 
+						//这里需要绑定session到socketchannel
+	                    sc.register(selector, SelectionKey.OP_READ, session);
 	                    FTPServer.sessionList.add(session);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -61,6 +64,7 @@ public class NioProcessor implements Runnable{
 			
 			try {
 				int count = selector.select(1000);
+				//有事件发生
 				if(count > 0) {
 					Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
 					while(iterator.hasNext()) {
@@ -81,14 +85,40 @@ public class NioProcessor implements Runnable{
 		
 	}
 
-	 //读取客户端消息
+	/**
+	    *  初始化session
+	    *  后续可以加入认证，用户分配的文件夹，idle时间，传输速率
+	 * @param session
+	 */
+	 private void init(NioSession session) {
+		
+		 SocketChannel sc = session.getSocketChannel();
+		 if(sc == null || !sc.isConnected()) {
+			 LogUtil.warning("Session initialized failed");
+			 throw new RuntimeException("Session initialized failed");
+		 }
+		 
+		 try {
+			session.setClientAddress(sc.getRemoteAddress());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+
+	//读取客户端消息
 	private void readData(SelectionKey key) {
 		//取到关联的channle
         SocketChannel channel = null;
 
         try {
-           //得到channel
+           //反向得到channel
             channel = (SocketChannel) key.channel();
+            
+            NioSession session = (NioSession)key.attachment();
+            
             //创建buffer
             ByteBuffer buffer = ByteBuffer.allocate(1024);
 
@@ -98,10 +128,10 @@ public class NioProcessor implements Runnable{
                 //把缓存区的数据转成字符串
                 String msg = new String(buffer.array());
                 //输出该消息
-                System.out.println("form 客户端: " + msg);
-
-                //向其它的客户端转发消息(去掉自己), 专门写一个方法来处理
-          //      sendInfoToOtherClients(msg, channel);
+                LogUtil.info("from client: " + session.getClientAddress() + " msg: " + msg);
+                
+                //TODO 解析消息,chat/files list/retrieve file ?
+                
             }
 
         }catch (IOException e) {
@@ -119,9 +149,7 @@ public class NioProcessor implements Runnable{
 	}
 
 
-	public static void registerNewSession() {
-		
-	}
+
 
 
 
