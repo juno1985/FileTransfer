@@ -112,12 +112,13 @@ public class NioProcessor implements Runnable{
 	private void readData(SelectionKey key) {
 		//取到关联的channle
         SocketChannel channel = null;
+        NioSession session = null;
 
         try {
-           //反向得到channel
+        	//得到socketchannel绑定的object
+        	session = (NioSession)key.attachment();
+            //反向得到channel
             channel = (SocketChannel) key.channel();
-            
-            NioSession session = (NioSession)key.attachment();
             
             //创建buffer
             ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -136,11 +137,14 @@ public class NioProcessor implements Runnable{
 
         }catch (IOException e) {
             try {
-                System.out.println(channel.getRemoteAddress() + " 离线了..");
+                LogUtil.info(channel.getRemoteAddress() + " drop offline.");
+                //从session列表中删除
+                FTPServer.sessionList.remove(session);
                 //取消注册
                 key.cancel();
                 //关闭通道
                 channel.close();
+                session = null;
             }catch (IOException e2) {
                 e2.printStackTrace();;
             }
