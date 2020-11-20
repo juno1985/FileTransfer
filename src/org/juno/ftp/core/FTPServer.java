@@ -50,7 +50,7 @@ public class FTPServer {
 			//运行acceptor的线程池
 			executorAcceptor = Executors.newCachedThreadPool();
 			//监听NIO READ线程池
-			int corePoolSize = 0;
+			int corePoolSize = 1;
 			int maxPoolSize = Runtime.getRuntime().availableProcessors();
 			executorProcessor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, 
 					10, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new JunoThreadFactory("NioProcessorPool"), new ThreadPoolExecutor.CallerRunsPolicy());
@@ -141,13 +141,15 @@ public class FTPServer {
 								ByteBuffer buffer = ByteBuffer.wrap(rep.getBytes());
 								socketChannel.write(buffer);
 							
-								//启动一个processor
-								executorProcessor.submit(new NioProcessor());
-								
 								//创建新的session
 								NioSession nioSession = new NioSession(socketChannel);
 								newSessionList.add(nioSession);
 								newSession.set(Boolean.TRUE);
+								
+								//启动一个processor
+								executorProcessor.submit(new NioProcessor());
+								
+								
 							}
 						}
 					}

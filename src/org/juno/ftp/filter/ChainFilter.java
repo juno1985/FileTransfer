@@ -1,4 +1,7 @@
-package org.juno.ftp.core;
+package org.juno.ftp.filter;
+
+import org.juno.ftp.core.TaskResource;
+
 /**
  * 
  * @author thinkpad

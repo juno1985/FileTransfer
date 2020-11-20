@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.juno.ftp.com.PropertiesUtil;
 
@@ -21,17 +23,18 @@ public class FTPClient {
 	private BufferedOutputStream bufferedOutput;
 	private Scanner scan;
 	CRLFLineReader lineReader;
+	ExecutorService executor;
 
 	public FTPClient() {
 		HOST = PropertiesUtil.getProperty("ftp.server.host");
 		PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
-		
+		executor = Executors.newCachedThreadPool();
 	}
 
 	public void connect() throws IOException {
 
 		try {
-			socket = new Socket("127.0.0.1", PORT);
+			socket = new Socket(HOST, PORT);
 			inputStream = socket.getInputStream();
 			outputStream = socket.getOutputStream();
 			bufferedOutput = new BufferedOutputStream(outputStream);
@@ -39,9 +42,12 @@ public class FTPClient {
 			String response = lineReader.readLine();
 			System.out.println(response);
 			
-			startInput();
+			//executor.submit(new Worker());
 			
-		//	Worker worker = new Worker();
+			Thread thread = new Thread(new Worker());
+			thread.start();
+			
+			startInput();
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -58,14 +64,28 @@ public class FTPClient {
 			_inputline = ClientStringBuilder.stringBuilder(_inputline);
 			bufferedOutput.write(_inputline.getBytes());
 			bufferedOutput.flush();
+
 		}
 	}
 	
-	static class Worker implements Runnable{
+	class Worker implements Runnable{
+		
+		byte[] buff = new byte[1024];
 
 		@Override
 		public void run() {
-			
+			while(true) {
+				try {
+					//inputStream.read(buff);
+					String response = lineReader.readLine();
+					System.out.println(response);
+				} catch (IOException e) {
+					
+					e.printStackTrace();
+				}
+				
+				
+			}
 		}
 		
 	}

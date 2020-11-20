@@ -16,6 +16,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.juno.ftp.com.PropertiesUtil;
+import org.juno.ftp.filter.ChainFilter;
+import org.juno.ftp.filter.FileOperationFilter;
+import org.juno.ftp.filter.IODefailtFilter;
 import org.juno.ftp.log.LogUtil;
 
 public class NioProcessor implements Runnable{
@@ -138,7 +141,7 @@ public class NioProcessor implements Runnable{
                 //创建任务流需要的resource
                 TaskResource taskResource = decoder(msg);
                 //创建任务流
-                Stack<ChainFilter> chainStack = forgeFilterChain(taskResource);
+                Stack<ChainFilter> chainStack = forgeFilterChain(taskResource, session);
                 executor.submit(new NioWorker(chainStack, taskResource));
                 
                 //输出该消息
@@ -166,13 +169,12 @@ public class NioProcessor implements Runnable{
 	}
 
 
-	private Stack<ChainFilter> forgeFilterChain(TaskResource taskResource) {
+	private Stack<ChainFilter> forgeFilterChain(TaskResource taskResource, NioSession session) {
 		Stack<ChainFilter> chainStack = new Stack<>();
 		if(taskResource.getWorkType() == WORKTYPE.LIST) {
-			//TODO 增加文件发送任务
-			//这里应该使用工厂创建对象
-			//这里应该把session传进每一个task
-			chainStack.add(new FileOperationFilter());
+			//TODO 这里应该使用工厂创建对象
+			chainStack.add(new IODefailtFilter(session));
+			chainStack.add(new FileOperationFilter(session));
 		}
 		return chainStack;
 	}
