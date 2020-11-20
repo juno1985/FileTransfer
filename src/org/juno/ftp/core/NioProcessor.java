@@ -176,22 +176,33 @@ public class NioProcessor implements Runnable{
 			chainStack.add(new IODefailtFilter(session));
 			chainStack.add(new FileOperationFilter(session));
 		}
+		else if(taskResource.getWorkType() == WORKTYPE.GROUP_CHAT) {
+			chainStack.add(new IODefailtFilter(session));
+		}
 		return chainStack;
 	}
 
 
 	private TaskResource decoder(String msg) {
-		
-	
+		List<Object> params = new ArrayList<>();
+		TaskResource taskResource = null;
 		if(msg.startsWith("$list")) {
 			String path = PropertiesUtil.getProperty("ftp.server.user.folder");
-			List<Object> params = new ArrayList<>();
+			
 			params.add(path);
-			TaskResource taskResource = new TaskResource(WORKTYPE.LIST, params);
-			return taskResource;
+			taskResource = new TaskResource(WORKTYPE.LIST, params);
+		}
+		//TODO
+		else if(msg.startsWith("$pull")) {
+			
+		}
+		//normal group chat
+		else {
+			params.add(msg);
+			taskResource = new TaskResource(WORKTYPE.GROUP_CHAT, params);
 		}
 		
-		return null;
+		return taskResource;
 	}
 
 

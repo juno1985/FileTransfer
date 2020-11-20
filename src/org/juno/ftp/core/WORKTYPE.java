@@ -2,5 +2,5 @@ package org.juno.ftp.core;
 
 public enum WORKTYPE {
 
-	LIST,PULL;
+	LIST,PULL,GROUP_CHAT;
 }
