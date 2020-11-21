@@ -7,6 +7,11 @@ public class PropertiesUtil {
 	
 	private static final Properties properties;
 	
+	
+	private PropertiesUtil() {
+	
+	}
+
 	static {
 		properties = new Properties();
 		try {

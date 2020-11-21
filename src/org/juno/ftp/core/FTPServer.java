@@ -47,7 +47,7 @@ public class FTPServer {
 	public FTPServer() {
 		try {
 			validHostAddress();
-			//运行acceptor的线程池
+			//创建acceptor的线程池
 			executorAcceptor = Executors.newCachedThreadPool();
 			//监听NIO READ线程池
 			int corePoolSize = 1;
