@@ -28,31 +28,29 @@ public class IODefailtFilter implements ChainFilter {
 		List<Object> params = taskResource.getParams();
 		switch (workType) {
 		// TODO 这里的String处理可以抽离出来集中处理
-		case LIST:
-
+		case LIST: 
+		case PULL:
 			try {
-				writeString(_buildOutString(params, STATE.OK), this.session);
+				writeString(_buildOutString(params), this.session);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			break;
 		case GROUP_CHAT:
 			try {
-				writeStringToAllSessions(_buildOutString(params, STATE.GROUPCHAT), FTPServer.sessionList);
+				writeStringToAllSessions(_buildOutString(params), FTPServer.sessionList);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			break;
-		case PULL:
-			break;
+
 		}
 	}
 
-	private String _buildOutString(List<Object> params, STATE state) {
+	private String _buildOutString(List<Object> params) {
 		StringBuilder sb = new StringBuilder();
-		sb.append(state.getCode());
-		sb.append(" ");
+	
 		for (Object param : params) {
 			sb.append(param.toString());
 			sb.append('\r');

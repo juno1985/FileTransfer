@@ -41,71 +41,74 @@ public class FTPClient {
 			lineReader = new CRLFLineReader(new InputStreamReader(inputStream, "UTF-8"));
 			String response = lineReader.readLine();
 			System.out.println(response);
-			
-			//executor.submit(new Worker());
-			
+
+			// executor.submit(new Worker());
+
 			Thread thread = new Thread(new Worker());
 			thread.start();
-			
+
 			startInput();
-			
+
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	//启动输入
+
+	// 启动输入
 	private void startInput() throws IOException {
 		this.scan = new Scanner(System.in);
 		String _inputline;
-		while(scan.hasNext()) {
+		while (scan.hasNext()) {
 			_inputline = scan.nextLine();
-			_inputline = ClientStringBuilder.stringBuilder(_inputline);
-			//发送到服务器
+			_inputline = JunoStringBuilder.stringBuilder(_inputline);
+			// 发送到服务器
 			bufferedOutput.write(_inputline.getBytes());
 			bufferedOutput.flush();
 
 		}
 	}
-	
+
 	private String[] _decode(String str) {
-		String[] str_arr = str.split(" ",2);
+		String[] str_arr = str.split(" ", 2);
 		return str_arr;
 	}
-	
+
 	private void process(String[] resp) {
 		String resp_code = resp[0];
-		if(resp_code.equals(STATE.GROUPCHAT.getCode())) {
-			for(int i = 1; i < resp.length; i++) {
-				System.out.print(resp[i]);
+
+		for (int i = 1; i < resp.length; i++) {
+			String out = resp[i];
+			if(out.startsWith("\r") || out.startsWith("\n")) {
+				System.out.println(out.substring(1));
 			}
-			System.out.println();
+			else System.out.println(resp[i]);
 		}
+
 	}
-	
-	//读取网络数据
-	class Worker implements Runnable{
-		
+
+	// 读取网络数据
+	class Worker implements Runnable {
+
 		byte[] buff = new byte[1024];
 
 		@Override
 		public void run() {
-			while(true) {
+			while (true) {
 				try {
-					//inputStream.read(buff);
+					// inputStream.read(buff);
 					String response = lineReader.readLine();
 					String[] decode_resp = _decode(response);
 					process(decode_resp);
 				} catch (IOException e) {
-					
+
 					e.printStackTrace();
 				}
-				
-				
+
 			}
 		}
-		
+
 	}
 
 }
