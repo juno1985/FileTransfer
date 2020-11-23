@@ -1,5 +1,5 @@
 package org.juno.ftp.filter;
-
+//网络流过滤器
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;

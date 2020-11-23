@@ -22,7 +22,7 @@ import org.juno.ftp.filter.IODefailtFilter;
 import org.juno.ftp.log.LogUtil;
 
 public class NioProcessor implements Runnable{
-	
+	// 执行任务链
 	private static ExecutorService executor;
 	private static Selector selector = null;
 	
@@ -47,7 +47,7 @@ public class NioProcessor implements Runnable{
 		LogUtil.info(Thread.currentThread().getName() + " started!");
 		
 		while(FTPServer.isStarted()) {
-			
+			// 检查acceptor是否接受新的session
 			if(FTPServer.newSession.get()) {
 				// 将新加入的channel注册
 				for(NioSession session : FTPServer.newSessionList) {
@@ -70,8 +70,9 @@ public class NioProcessor implements Runnable{
 				// 新session处理完毕，更改标志
 				FTPServer.newSession.getAndSet(Boolean.FALSE);
 			}
-			
+			//扫描selector上面是否发生READ事件
 			try {
+				//非阻塞
 				int count = selector.select(1000);
 				//有事件发生
 				if(count > 0) {

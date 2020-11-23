@@ -62,12 +62,13 @@ public class FTPClient {
 		while(scan.hasNext()) {
 			_inputline = scan.nextLine();
 			_inputline = ClientStringBuilder.stringBuilder(_inputline);
+			//发送到服务器
 			bufferedOutput.write(_inputline.getBytes());
 			bufferedOutput.flush();
 
 		}
 	}
-	
+	//读取网络数据
 	class Worker implements Runnable{
 		
 		byte[] buff = new byte[1024];

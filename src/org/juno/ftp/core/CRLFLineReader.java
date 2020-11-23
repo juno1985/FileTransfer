@@ -12,7 +12,7 @@ public class CRLFLineReader extends BufferedReader {
 	public CRLFLineReader(Reader in) {
 		super(in);
 	}
-	
+	// 读取BufferedStream里面的一行数据
 	public String readLine() throws IOException {
 		final StringBuilder sb = new StringBuilder();
 		boolean prevWasCR = false;

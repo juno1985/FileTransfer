@@ -6,7 +6,7 @@ import org.juno.ftp.core.NioSession;
 import org.juno.ftp.core.TaskResource;
 import org.juno.ftp.core.WORKTYPE;
 import org.juno.ftp.log.LogUtil;
-
+//操作本地文件的过滤器
 public class FileOperationFilter implements ChainFilter {
 	
 	private NioSession session;
