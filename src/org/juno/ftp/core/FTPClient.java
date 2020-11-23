@@ -68,6 +68,22 @@ public class FTPClient {
 
 		}
 	}
+	
+	private String[] _decode(String str) {
+		String[] str_arr = str.split(" ",2);
+		return str_arr;
+	}
+	
+	private void process(String[] resp) {
+		String resp_code = resp[0];
+		if(resp_code.equals(STATE.GROUPCHAT.getCode())) {
+			for(int i = 1; i < resp.length; i++) {
+				System.out.print(resp[i]);
+			}
+			System.out.println();
+		}
+	}
+	
 	//读取网络数据
 	class Worker implements Runnable{
 		
@@ -79,7 +95,8 @@ public class FTPClient {
 				try {
 					//inputStream.read(buff);
 					String response = lineReader.readLine();
-					System.out.println(response);
+					String[] decode_resp = _decode(response);
+					process(decode_resp);
 				} catch (IOException e) {
 					
 					e.printStackTrace();

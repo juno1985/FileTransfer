@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-
+import org.juno.ftp.core.STATE;
 import org.juno.ftp.core.NioSession;
 import org.juno.ftp.core.TaskResource;
 import org.juno.ftp.core.WORKTYPE;
@@ -31,14 +31,14 @@ public class IODefailtFilter implements ChainFilter {
 		case LIST:
 
 			try {
-				writeString(_buildOutString(params), this.session);
+				writeString(_buildOutString(params, STATE.OK), this.session);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			break;
 		case GROUP_CHAT:
 			try {
-				writeStringToAllSessions(_buildOutString(params), FTPServer.sessionList);
+				writeStringToAllSessions(_buildOutString(params, STATE.GROUPCHAT), FTPServer.sessionList);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -49,8 +49,10 @@ public class IODefailtFilter implements ChainFilter {
 		}
 	}
 
-	private String _buildOutString(List<Object> params) {
+	private String _buildOutString(List<Object> params, STATE state) {
 		StringBuilder sb = new StringBuilder();
+		sb.append(state.getCode());
+		sb.append(" ");
 		for (Object param : params) {
 			sb.append(param.toString());
 			sb.append('\r');
