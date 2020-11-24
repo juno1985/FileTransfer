@@ -86,9 +86,12 @@ public class FTPClient {
 		String resp_code = resp[0];
 
 		if (resp_code.equals(STATE.FILEREADY.getCode())) {
-			String pull_file_name = resp[resp.length - 1].split(": ")[1];
+			String file_desp_str = resp[resp.length - 1].split(": ")[1];
+			String[] file_desp_arr = file_desp_str.split(";");
+			String pull_file_name = file_desp_arr[0];
+			long file_size = Long.parseLong(file_desp_arr[1]);
 			// 提交任务到线程池下载文件
-			pullFileThreadPool.submit(new GetFileThread(pull_file_name));
+			pullFileThreadPool.submit(new GetFileThread(pull_file_name, file_size));
 		} else {
 			for (int i = 1; i < resp.length; i++) {
 				String out = resp[i];
@@ -128,14 +131,16 @@ public class FTPClient {
 
 		ServerSocket serverSocket;
 		String fileName;
+		long fileSize;
 
-		public GetFileThread(String fileName) {
+		public GetFileThread(String fileName, long fileSize) {
 			try {
 				serverSocket = new ServerSocket(0);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			this.fileName = fileName;
+			this.fileSize = fileSize;
 		}
 
 		@Override
@@ -158,7 +163,7 @@ public class FTPClient {
 						String saveFullPath = PropertiesUtil.getProperty("ftp.client.file.save") + "\\" + fileName;
 						File file = new File(saveFullPath);
 						FileOutputStream fileOut = new FileOutputStream(file);
-						copyStream(in, fileOut);
+						copyStream(in, fileOut, fileSize);
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -172,7 +177,7 @@ public class FTPClient {
 			return null;
 		}
 
-		private void copyStream(InputStream in, OutputStream fileOut) throws IOException {
+		private void copyStream(InputStream in, OutputStream fileOut, long size) throws IOException {
 			BufferedInputStream buffIn = new BufferedInputStream(in);
 			int numBytes;
 			long total = 0L;
@@ -185,7 +190,7 @@ public class FTPClient {
 					}
 					fileOut.write(buffer, 0, numBytes);
 					total += numBytes;
-					System.out.println("Saved bytes of request file: " + total);
+					System.out.println("Saved bytes of request file: " + (int)(((double)total/size)*100) + "%");
 				}
 			}catch (IOException e) {
 				e.printStackTrace();

@@ -68,7 +68,7 @@ public class FileOperationFilter implements ChainFilter {
 			if (file == null) {
 				taskResource.getParams().add(STATE.NORESOURCE.getCode() + " File not found or dose not exists: " + fileName);
 			} else {
-				taskResource.getParams().add(STATE.FILEREADY.getCode() + " " + "File is ready for PULL: " + fileName);
+				taskResource.getParams().add(STATE.FILEREADY.getCode() + " " + "File is ready for PULL: " + fileName + ";" + file.length());
 			}
 			break;
 		case PULL1:
