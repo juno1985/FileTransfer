@@ -151,21 +151,24 @@ public class FTPClient {
 			
 			Socket socket = serverSocket.accept();
 			
-			if(socket.isConnected()) {
-				try {
-					InputStream in = socket.getInputStream();
-					String saveFullPath = PropertiesUtil.getProperty("ftp.client.file.save") + "\\" + fileName;
-					File file = new File(saveFullPath);
-					FileOutputStream fileOut = new FileOutputStream(file);
-					copyStream(in, fileOut);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}else {
-				System.out.println("File connecton failed!");
+			try {
+				if (socket.isConnected()) {
+					try {
+						InputStream in = socket.getInputStream();
+						String saveFullPath = PropertiesUtil.getProperty("ftp.client.file.save") + "\\" + fileName;
+						File file = new File(saveFullPath);
+						FileOutputStream fileOut = new FileOutputStream(file);
+						copyStream(in, fileOut);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					System.out.println("File connecton failed!");
+				} 
+			} finally {
+				socket.close();
 			}
-
 			return null;
 		}
 

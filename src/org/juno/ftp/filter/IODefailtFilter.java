@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -57,9 +58,13 @@ public class IODefailtFilter implements ChainFilter {
 				File file = (File) params.get(0);
 				String remotePort = (String) params.get(1);
 				Socket dataSocket = openDataSocket(remotePort);
-				FileInputStream fileInputStream = createFileInputStream(file);
-				OutputStream socketOutputStream = dataSocket.getOutputStream();
-				copyStream(fileInputStream, socketOutputStream);
+				try {
+					FileInputStream fileInputStream = createFileInputStream(file);
+					OutputStream socketOutputStream = dataSocket.getOutputStream();
+					copyStream(fileInputStream, socketOutputStream);
+				} finally {
+					dataSocket.close();
+				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -96,10 +101,14 @@ public class IODefailtFilter implements ChainFilter {
 			if(buffOut != null) {
 				buffOut.flush();
 			}
+			in.close();
+			out.close();
+			buffIn.close();
+			buffOut.close();
 		}
 		long endTime = System.currentTimeMillis();
 		long consumeTime = (endTime - startTime)/1000;
-		LogUtil.info(Thread.currentThread().getName() + "send " + transferredSize + " bytes in " + consumeTime + " seconds.");
+		LogUtil.info(Thread.currentThread().getName() + " send " + transferredSize + " bytes in " + consumeTime + " seconds.");
 	}
 
 	private FileInputStream createFileInputStream(File file) throws IOException {
@@ -115,13 +124,18 @@ public class IODefailtFilter implements ChainFilter {
 	}
 
 	private Socket openDataSocket(String remotePort) {
+		Socket socket = session.getSocketChannel().socket();
+		InetAddress localAdrr = socket.getLocalAddress();
 		Socket dataSoc = null;
 		try {
 			InetSocketAddress remoteAddress = (InetSocketAddress) session.getClientAddress();
 			dataSoc = new Socket();
 			dataSoc.setReuseAddress(true);
-			// TODO 这里localAddr需要处理，暂且不设
-			SocketAddress localSocketAddress = new InetSocketAddress(0);
+			//以下两种连接任选其一
+			// 1
+			SocketAddress localSocketAddress = new InetSocketAddress(localAdrr, 0);
+			// 2
+			//SocketAddress localSocketAddress = new InetSocketAddress(0);
 			LogUtil.info("Binding active data connection to : " + localSocketAddress);
 			dataSoc.bind(localSocketAddress);
 			dataSoc.connect(new InetSocketAddress(remoteAddress.getAddress(), Integer.parseInt(remotePort)));
