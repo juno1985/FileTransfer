@@ -11,6 +11,7 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.juno.ftp.com.IfUnicodePresent;
 import org.juno.ftp.com.PropertiesUtil;
 
 public class FTPClient {

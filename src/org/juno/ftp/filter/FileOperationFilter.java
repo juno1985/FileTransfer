@@ -31,9 +31,9 @@ public class FileOperationFilter implements ChainFilter {
 	private File isValidFile(String path) {
 		File file = new File(path);
 		if (!file.exists() || !file.canRead()) {
-			return file;
-		} else
 			return null;
+		} else
+			return file;
 	}
 
 	@SuppressWarnings("incomplete-switch")
@@ -63,9 +63,7 @@ public class FileOperationFilter implements ChainFilter {
 			if (file == null) {
 				taskResource.getParams().add(STATE.NORESOURCE.getCode() + " File not found or dose not exists: " + fileName);
 			} else {
-				
-				String response = ResponseBuilder.responseBuilder(STATE.FILEREADY, " " + "File is ready for PULL: " + fileName);
-				taskResource.getParams().add(response);
+				taskResource.getParams().add(STATE.FILEREADY + " " + "File is ready for PULL: " + fileName);
 			}
 			break;
 		}

@@ -15,6 +15,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.juno.ftp.com.ByteStringConverter;
+import org.juno.ftp.com.IfUnicodePresent;
 import org.juno.ftp.com.PropertiesUtil;
 import org.juno.ftp.filter.ChainFilter;
 import org.juno.ftp.filter.ChatHandlerFilter;
@@ -139,7 +141,7 @@ public class NioProcessor implements Runnable{
             //根据count的值做处理
             if(count > 0) {
                 //把缓存区的数据转成字符串
-                String msg = new String(buffer.array());
+            	String msg = ByteStringConverter.byteToString(buffer.array());
                 //创建任务流需要的resource
                 TaskResource taskResource = decoder(msg);
                 //创建任务流
@@ -201,7 +203,7 @@ public class NioProcessor implements Runnable{
 		}
 		else if(msg.startsWith("$pull")) {
 			String fileName = msg.substring(6);
-			fileName = JunoStringBuilder.truncateCFLR(fileName);
+	//		fileName = JunoStringBuilder.truncateCFLR(fileName);
 			String filePath = PropertiesUtil.getProperty("ftp.server.user.folder") + "\\" + fileName;
 			params.add(filePath);
 			taskResource = new TaskResource(WORKTYPE.PULL, params);

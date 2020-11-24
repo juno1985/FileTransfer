@@ -31,7 +31,7 @@ public class FTPServer {
 	private final int backlog = 50;
 	private Selector selector;
 	private static final String HOST = "localhost";
-	private AtomicInteger acceptorId = new AtomicInteger();
+	private AtomicInteger acceptorId = new AtomicInteger(1);
 	//运行accept线程
 	private ExecutorService executorAcceptor;
 	//运行read线程
@@ -53,7 +53,7 @@ public class FTPServer {
 			int corePoolSize = 1;
 			int maxPoolSize = Runtime.getRuntime().availableProcessors();
 			executorProcessor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, 
-					10, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new JunoThreadFactory("NioProcessorPool"), new ThreadPoolExecutor.CallerRunsPolicy());
+					10, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new JunoThreadFactory("NioProcessor"), new ThreadPoolExecutor.CallerRunsPolicy());
 			selector = Selector.open();
 		} catch (IOException e) {
 			LogUtil.warning(e.getMessage());
@@ -80,8 +80,7 @@ public class FTPServer {
 			listenChannel.configureBlocking(false);
 			listenChannel.register(selector, SelectionKey.OP_ACCEPT);
 			//创建acceptor线程
-			int nextAcceptorId = acceptorId.getAndIncrement();
-			String acceptorThreadName = "NioAcceptor-" + nextAcceptorId + "-thread";
+			String acceptorThreadName = "NioAcceptor-thread-" + acceptorId.getAndIncrement();
 			NioAcceptor acceptor = new NioAcceptor(acceptorThreadName);
 			executorAcceptor.submit(acceptor);
 			
@@ -110,14 +109,18 @@ public class FTPServer {
 	}
 
 	private class NioAcceptor implements Runnable{
+		
+		private String name;
 
 		public NioAcceptor(String threadName) {
-			Thread.currentThread().setName(threadName);
+			this.name = threadName;
+			
 		}
 
 		@Override
 		public void run() {
-			LogUtil.info("NioAcceptor thread " + Thread.currentThread().getName() + " is listening on port: " + PORT);
+			Thread.currentThread().setName(this.name);
+			LogUtil.info(Thread.currentThread().getName() + " is listening on port: " + PORT);
 			while(started) {
 				int selected = 0;
 				try {
