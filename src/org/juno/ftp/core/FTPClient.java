@@ -64,6 +64,11 @@ public class FTPClient {
 		while (scan.hasNext()) {
 			_inputline = scan.nextLine();
 			_inputline = JunoStringBuilder.stringBuilder(_inputline);
+			//过滤掉无意义连续回车
+			String content = _inputline.replace("\r\n", "");
+			if(content.isEmpty()) {
+				continue;
+			}
 			// 发送到服务器
 			bufferedOutput.write(_inputline.getBytes());
 			bufferedOutput.flush();
