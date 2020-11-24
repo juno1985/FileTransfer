@@ -35,6 +35,11 @@ public class FileOperationFilter implements ChainFilter {
 		} else
 			return file;
 	}
+	
+	private File isPullable(String path) {
+		File file = isValidFile(path);
+		return file.isFile() ? file : null;
+	}
 
 	@SuppressWarnings("incomplete-switch")
 	@Override
@@ -63,9 +68,17 @@ public class FileOperationFilter implements ChainFilter {
 			if (file == null) {
 				taskResource.getParams().add(STATE.NORESOURCE.getCode() + " File not found or dose not exists: " + fileName);
 			} else {
-				taskResource.getParams().add(STATE.FILEREADY + " " + "File is ready for PULL: " + fileName);
+				taskResource.getParams().add(STATE.FILEREADY.getCode() + " " + "File is ready for PULL: " + fileName);
 			}
 			break;
+		case PULL1:
+			String fullPath1 = (String) taskResource.getParams().get(0);
+			//TODO 这里需要判断不是文件的情况
+			File file1 = isPullable(fullPath1);
+			String remotePort = (String) taskResource.getParams().get(1);
+			taskResource.getParams().clear();
+			taskResource.getParams().add(file1);
+			taskResource.getParams().add(remotePort);
 		}
 	}
 

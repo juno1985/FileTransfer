@@ -151,7 +151,6 @@ public class NioProcessor implements Runnable{
                 //输出该消息
                 LogUtil.info("from client: " + session.getClientAddress() + " msg: " + msg);
                 
-                //TODO 解析消息,chat/files list/retrieve file ?
                 
             }
 
@@ -188,25 +187,42 @@ public class NioProcessor implements Runnable{
 			chainStack.add(new IODefailtFilter(session));
 			chainStack.add(new FileOperationFilter(session));
 		}
+		else if(taskResource.getWorkType() == WORKTYPE.PULL1) {
+			chainStack.add(new IODefailtFilter(session));
+			chainStack.add(new FileOperationFilter(session));
+		}
 		return chainStack;
 	}
 
+	private String getAbsolutePath(String fileName) {
+		return PropertiesUtil.getProperty("ftp.server.user.folder") + "\\" + fileName;
+	}
 
 	private TaskResource decoder(String msg) {
 		List<Object> params = new ArrayList<>();
 		TaskResource taskResource = null;
-		if(msg.startsWith("$list")) {
+		String workType = ((String[])msg.split(" "))[0];
+		if(workType.equals("$list")) {
 			String path = PropertiesUtil.getProperty("ftp.server.user.folder");
 			
 			params.add(path);
 			taskResource = new TaskResource(WORKTYPE.LIST, params);
 		}
-		else if(msg.startsWith("$pull")) {
+		else if(workType.equals("$pull")) {
 			String fileName = msg.substring(6);
-	//		fileName = JunoStringBuilder.truncateCFLR(fileName);
-			String filePath = PropertiesUtil.getProperty("ftp.server.user.folder") + "\\" + fileName;
+			String filePath = getAbsolutePath(fileName);
 			params.add(filePath);
 			taskResource = new TaskResource(WORKTYPE.PULL, params);
+		}
+		else if(workType.equals("$pull1")) {
+			String[] str_array = msg.split(" ");
+			String fileName = str_array[1];
+			String remotePort = str_array[2];
+			String filePath = getAbsolutePath(fileName);
+			params.add(filePath);
+			params.add(remotePort);
+			taskResource = new TaskResource(WORKTYPE.PULL1, params);
+			
 		}
 		//normal group chat
 		else {

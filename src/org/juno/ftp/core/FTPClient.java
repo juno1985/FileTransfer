@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,12 +26,12 @@ public class FTPClient {
 	private BufferedOutputStream bufferedOutput;
 	private Scanner scan;
 	CRLFLineReader lineReader;
-	ExecutorService executor;
+	ExecutorService pullFileThreadPool;
 
 	public FTPClient() {
 		HOST = PropertiesUtil.getProperty("ftp.server.host");
 		PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
-		executor = Executors.newCachedThreadPool();
+		pullFileThreadPool = Executors.newCachedThreadPool();
 	}
 
 	public void connect() throws IOException {
@@ -42,8 +44,6 @@ public class FTPClient {
 			lineReader = new CRLFLineReader(new InputStreamReader(inputStream, "UTF-8"));
 			String response = lineReader.readLine();
 			System.out.println(response);
-
-			// executor.submit(new Worker());
 
 			Thread thread = new Thread(new Worker());
 			thread.start();
@@ -64,9 +64,9 @@ public class FTPClient {
 		while (scan.hasNext()) {
 			_inputline = scan.nextLine();
 			_inputline = JunoStringBuilder.stringBuilder(_inputline);
-			//过滤掉无意义连续回车
+			// 过滤掉无意义连续回车
 			String content = _inputline.replace("\r\n", "");
-			if(content.isEmpty()) {
+			if (content.isEmpty()) {
 				continue;
 			}
 			// 发送到服务器
@@ -84,12 +84,18 @@ public class FTPClient {
 	private void process(String[] resp) {
 		String resp_code = resp[0];
 
-		for (int i = 1; i < resp.length; i++) {
-			String out = resp[i];
-			if(out.startsWith("\r") || out.startsWith("\n")) {
-				System.out.println(out.substring(1));
+		if (resp_code.equals(STATE.FILEREADY.getCode())) {
+			String pull_file_name = resp[resp.length - 1].split(": ")[1];
+			// 提交任务到线程池下载文件
+			pullFileThreadPool.submit(new GetFileThread(pull_file_name));
+		} else {
+			for (int i = 1; i < resp.length; i++) {
+				String out = resp[i];
+				if (out.startsWith("\r") || out.startsWith("\n")) {
+					System.out.println(out.substring(1));
+				} else
+					System.out.println(resp[i]);
 			}
-			else System.out.println(resp[i]);
 		}
 
 	}
@@ -113,6 +119,42 @@ public class FTPClient {
 				}
 
 			}
+		}
+
+	}
+
+	class GetFileThread implements Callable<String> {
+
+		ServerSocket serverSocket;
+		String fileName;
+
+		public GetFileThread(String fileName) {
+			try {
+				serverSocket = new ServerSocket(0);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			this.fileName = fileName;
+		}
+
+		@Override
+		public String call() throws Exception {
+
+			int port = serverSocket.getLocalPort();
+
+			final String PULL_REQUEST = "$pull1" + " " + fileName + " " + port;
+
+			// 发送到服务器
+			bufferedOutput.write(PULL_REQUEST.getBytes());
+			bufferedOutput.flush();
+			
+			Socket socket = serverSocket.accept();
+			
+			if(socket.isConnected()) {
+				System.out.println("connected");
+			}
+
+			return null;
 		}
 
 	}
