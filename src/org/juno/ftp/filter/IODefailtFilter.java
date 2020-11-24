@@ -1,9 +1,13 @@
 package org.juno.ftp.filter;
-//网络流过滤器
+
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -11,7 +15,6 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import org.juno.ftp.core.STATE;
 import org.juno.ftp.core.NioSession;
 import org.juno.ftp.core.TaskResource;
 import org.juno.ftp.core.WORKTYPE;
@@ -33,7 +36,7 @@ public class IODefailtFilter implements ChainFilter {
 		List<Object> params = taskResource.getParams();
 		switch (workType) {
 		// TODO 这里的String处理可以抽离出来集中处理
-		case LIST: 
+		case LIST:
 		case PULL:
 			try {
 				writeString(_buildOutString(params), this.session);
@@ -53,7 +56,10 @@ public class IODefailtFilter implements ChainFilter {
 			try {
 				File file = (File) params.get(0);
 				String remotePort = (String) params.get(1);
-				openDataSocket(remotePort);
+				Socket dataSocket = openDataSocket(remotePort);
+				FileInputStream fileInputStream = createFileInputStream(file);
+				OutputStream socketOutputStream = dataSocket.getOutputStream();
+				copyStream(fileInputStream, socketOutputStream);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -61,14 +67,60 @@ public class IODefailtFilter implements ChainFilter {
 
 		}
 	}
-	
+
+	private void copyStream(InputStream in, OutputStream out) throws IOException {
+		BufferedInputStream buffIn = new BufferedInputStream(in);
+		BufferedOutputStream buffOut = new BufferedOutputStream(out);
+		byte[] buff = new byte[8096];
+		long startTime = System.currentTimeMillis();
+		long transferredSize = 0L;
+		try {
+			while(true) {
+				//read data
+				
+					int count = buffIn.read(buff);
+					
+					if(count == -1) {
+						break;
+					}
+					
+					buffOut.write(buff, 0, count);
+					
+					transferredSize += count;
+				
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			if(buffOut != null) {
+				buffOut.flush();
+			}
+		}
+		long endTime = System.currentTimeMillis();
+		long consumeTime = (endTime - startTime)/1000;
+		LogUtil.info(Thread.currentThread().getName() + "send " + transferredSize + " bytes in " + consumeTime + " seconds.");
+	}
+
+	private FileInputStream createFileInputStream(File file) throws IOException {
+		final RandomAccessFile raf = new RandomAccessFile(file, "r");
+		raf.seek(0);
+		return new FileInputStream(raf.getFD()) {
+			@Override
+			public void close() throws IOException {
+				super.close();
+				raf.close();
+			}
+		};
+	}
+
 	private Socket openDataSocket(String remotePort) {
 		Socket dataSoc = null;
 		try {
 			InetSocketAddress remoteAddress = (InetSocketAddress) session.getClientAddress();
 			dataSoc = new Socket();
 			dataSoc.setReuseAddress(true);
-			//TODO　这里localAddr需要处理，暂且不设
+			// TODO 这里localAddr需要处理，暂且不设
 			SocketAddress localSocketAddress = new InetSocketAddress(0);
 			LogUtil.info("Binding active data connection to : " + localSocketAddress);
 			dataSoc.bind(localSocketAddress);
@@ -85,7 +137,7 @@ public class IODefailtFilter implements ChainFilter {
 
 	private String _buildOutString(List<Object> params) {
 		StringBuilder sb = new StringBuilder();
-	
+
 		for (Object param : params) {
 			sb.append(param.toString());
 			sb.append('\r');
