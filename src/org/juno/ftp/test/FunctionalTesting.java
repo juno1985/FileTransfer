@@ -32,7 +32,7 @@ public class FunctionalTesting {
 	
 	@Test
 	public void testClientConnect() {
-		FTPClient client = new FTPClient();
+		FTPClient client = new FTPClient(null);
 		try {
 			client.connect();
 		} catch (IOException e) {
@@ -47,7 +47,7 @@ public class FunctionalTesting {
 		
 		CountDownLatch countDown = new CountDownLatch(10);
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
-		FTPClient client = new FTPClient();
+		FTPClient client = new FTPClient(null);
 		for(int i = 0; i < 10; i++) {
 			executorService.submit(()->{
 				try {

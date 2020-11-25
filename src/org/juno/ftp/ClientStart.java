@@ -8,7 +8,13 @@ public class ClientStart {
 
 	public static void main(String[] args) {
 		
-		FTPClient client = new FTPClient();
+		String param = null;
+		
+		if(args != null && args.length != 0) {
+			param = args[0];
+		}
+		
+		FTPClient client = new FTPClient(param);
 		try {
 			client.connect();
 		} catch (IOException e) {

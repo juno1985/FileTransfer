@@ -29,11 +29,17 @@ public class FTPClient {
 	CRLFLineReader lineReader;
 	ExecutorService pullFileThreadPool;
 
-	public FTPClient() {
-		HOST = PropertiesUtil.getProperty("ftp.server.host");
+	public FTPClient(String param) {
+		if(param == null) {
+			HOST = PropertiesUtil.getProperty("ftp.server.host");
+		}
+		else {
+			HOST = param;
+		}
 		PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
 		pullFileThreadPool = Executors.newCachedThreadPool();
 	}
+
 
 	public void connect() throws IOException {
 
@@ -182,7 +188,8 @@ public class FTPClient {
 			int numBytes;
 			long total = 0L;
 			final byte[] buffer = new byte[1024];
-			
+			int dis_pro = -1;
+			int cur_pro;
 			try {
 				while((numBytes = buffIn.read(buffer)) != -1) {
 					if(numBytes == 0) {
@@ -190,7 +197,12 @@ public class FTPClient {
 					}
 					fileOut.write(buffer, 0, numBytes);
 					total += numBytes;
-					System.out.println("Saved bytes of request file: " + (int)(((double)total/size)*100) + "%");
+					cur_pro = (int)(((double)total/size)*100);
+					if(cur_pro > dis_pro) {
+						dis_pro = cur_pro;
+						System.out.println("Saved bytes of request file: " + dis_pro + "%");
+					}
+					
 				}
 			}catch (IOException e) {
 				e.printStackTrace();
