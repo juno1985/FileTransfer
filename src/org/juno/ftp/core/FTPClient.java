@@ -101,10 +101,17 @@ public class FTPClient {
 		} else {
 			for (int i = 1; i < resp.length; i++) {
 				String out = resp[i];
-				if (out.startsWith("\r") || out.startsWith("\n")) {
-					System.out.println(out.substring(1));
-				} else
-					System.out.println(resp[i]);
+				
+				String[] files = out.split("\r", -1);
+				
+				for(String display: files) {
+					if(display.isEmpty()) continue;
+					System.out.println(display);
+				}
+				/*
+				 * if (out.startsWith("\r") || out.startsWith("\n")) {
+				 * System.out.println(out.substring(1)); } else System.out.println(resp[i]);
+				 */
 			}
 		}
 
