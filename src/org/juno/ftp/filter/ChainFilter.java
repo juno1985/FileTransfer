@@ -4,7 +4,7 @@ import org.juno.ftp.core.TaskResource;
 
 /**
  * 
- * @author thinkpad
+ * @author Juno
  *
  * @param <S> 具体任务类型
  * @param <T> 参数
