@@ -96,8 +96,7 @@ public class FTPClient {
 				continue;
 			}
 			// 发送到服务器
-			bufferedOutput.write(_inputline.getBytes());
-			bufferedOutput.flush();
+			send(_inputline);
 
 		}
 	}
@@ -208,8 +207,7 @@ public class FTPClient {
 			final String PULL_REQUEST = "$pull1" + " " + fileName + " " + port;
 
 			// 发送到服务器
-			bufferedOutput.write(PULL_REQUEST.getBytes());
-			bufferedOutput.flush();
+			send(PULL_REQUEST);
 
 			Socket socket = serverSocket.accept();
 
@@ -325,9 +323,17 @@ public class FTPClient {
 			readyForNextPull = Boolean.FALSE;
 			System.out.println("Starting to pull " + _fileName);
 			String command = JunoStringBuilder.stringBuilder("$pull" + " " + _fileName);
-			bufferedOutput.write(command.getBytes());
+			send(command);
+		}
+	}
+	//发送到服务器端,由于可能多线程同时操作一个bufferedouput对象,所以使用锁
+	private synchronized void send(String str) throws IOException {
+		try {
+			bufferedOutput.write(str.getBytes());
+		} finally {
 			bufferedOutput.flush();
 		}
+	
 	}
 
 	class FilesSynchronizer implements Runnable {
@@ -340,8 +346,8 @@ public class FTPClient {
 				while (bufferedOutput == null) {
 					Thread.yield();
 				}
-				bufferedOutput.write("$list".getBytes());
-				bufferedOutput.flush();
+				String command = JunoStringBuilder.stringBuilder("$list");
+				send(command);
 				syncFilesWithRemote();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
