@@ -40,27 +40,25 @@ public class FTPClient {
 	ExecutorService pullFileThreadPool;
 	private CopyOnWriteArrayList<String> remoteFileList;
 	private String[] localFileList;
-	//考虑服务器负荷(电脑配置太低了~~)自动同步时需要排队 -- 其实这里不排队也行
+	// 考虑服务器负荷(电脑配置太低了~~)自动同步时需要排队 -- 其实这里不排队也行
 	private volatile Boolean readyForNextPull = Boolean.TRUE;
-	//线程通信同步器
+	// 线程通信同步器
 	private final Object PULL_LOCK = new Object();
-	//同步任務定時綫程池
+	// 同步任務定時綫程池
 	ScheduledExecutorService scheduledService;
 
 	public FTPClient(String param) {
-		if(param == null || param.isEmpty()) {
+		if (param == null || param.isEmpty()) {
 			HOST = PropertiesUtil.getProperty("ftp.server.host");
-		}
-		else {
+		} else {
 			HOST = param;
 		}
 		PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
 		pullFileThreadPool = Executors.newCachedThreadPool();
 		remoteFileList = new CopyOnWriteArrayList<>();
 		scheduledService = Executors.newSingleThreadScheduledExecutor();
-		scheduledService.scheduleWithFixedDelay(new FilesSynchronizer(), 1, 1, TimeUnit.MINUTES);
+		scheduledService.scheduleWithFixedDelay(new FilesSynchronizer(), 0, 1, TimeUnit.MINUTES);
 	}
-
 
 	public void connect() throws IOException {
 
@@ -120,42 +118,44 @@ public class FTPClient {
 			// 提交任务到线程池下载文件
 			pullFileThreadPool.submit(new GetFileThread(pull_file_name, file_size));
 		} else {
-			//存放收到信息并去掉\r
+			// 存放收到信息并去掉\r
 			List<String> __decodedResp = new ArrayList<>();
 			displayReceivedContent(resp, __decodedResp);
 			displayCollection(__decodedResp);
-			if(resp_code.equals(STATE.FILELIST.getCode())) {
+			if (resp_code.equals(STATE.FILELIST.getCode())) {
 				refreshRemoteFileList(__decodedResp);
 			}
 		}
 	}
-	//刷新remote file list
+
+	// 刷新remote file list
 	private void refreshRemoteFileList(List<String> currentFileList) {
 		remoteFileList.clear();
 		remoteFileList.addAll(currentFileList);
 	}
-	
-	//显示集合
-	private  <E> void  displayCollection(Collection<E> col) {
-		if(col instanceof List) {
-			for(E e : col) {
+
+	// 显示集合
+	private <E> void displayCollection(Collection<E> col) {
+		if (col instanceof List) {
+			for (E e : col) {
 				System.out.println(e.toString());
 			}
-		}else if(col instanceof Set) {
+		} else if (col instanceof Set) {
 			Iterator<E> it = col.iterator();
-			while(it.hasNext()) {
+			while (it.hasNext()) {
 				System.out.println(it.next().toString());
 			}
 		}
 	}
-	
-	//处理掉'\r'
+
+	// 处理掉'\r'
 	private void displayReceivedContent(String[] resp, List<String> __decodedResp) {
 		for (int i = 1; i < resp.length; i++) {
 			String out = resp[i];
 			String[] arr = out.split("\r", -1);
-			for(String str: arr) {
-				if(str.isEmpty()) continue;
+			for (String str : arr) {
+				if (str.isEmpty())
+					continue;
 				__decodedResp.add(str);
 			}
 		}
@@ -210,14 +210,14 @@ public class FTPClient {
 			// 发送到服务器
 			bufferedOutput.write(PULL_REQUEST.getBytes());
 			bufferedOutput.flush();
-			
+
 			Socket socket = serverSocket.accept();
-			
+
 			try {
 				if (socket.isConnected()) {
 					try {
 						InputStream in = socket.getInputStream();
-						//TODO 下载之前应该判断本地文件是否存在、空间是否充足
+						// TODO 下载之前应该判断本地文件是否存在、空间是否充足
 						String saveFullPath = PropertiesUtil.getProperty("ftp.client.file.save") + "\\" + fileName;
 						File file = new File(saveFullPath);
 						FileOutputStream fileOut = new FileOutputStream(file);
@@ -228,12 +228,12 @@ public class FTPClient {
 					}
 				} else {
 					System.out.println("File connecton failed!");
-				} 
+				}
 			} finally {
 				socket.close();
 			}
-			synchronized(PULL_LOCK) {
-				//下载完成,如果有后续下载请求可以排队处理
+			synchronized (PULL_LOCK) {
+				// 下载完成,如果有后续下载请求可以排队处理
 				readyForNextPull = Boolean.TRUE;
 				PULL_LOCK.notifyAll();
 			}
@@ -248,20 +248,20 @@ public class FTPClient {
 			int dis_pro = -1;
 			int cur_pro;
 			try {
-				while((numBytes = buffIn.read(buffer)) != -1) {
-					if(numBytes == 0) {
-						System.out.println( "read byte is 0, but cannot be treated as EOF!");
+				while ((numBytes = buffIn.read(buffer)) != -1) {
+					if (numBytes == 0) {
+						System.out.println("read byte is 0, but cannot be treated as EOF!");
 					}
 					fileOut.write(buffer, 0, numBytes);
 					total += numBytes;
-					cur_pro = (int)(((double)total/size)*100);
-					if(cur_pro > dis_pro) {
+					cur_pro = (int) (((double) total / size) * 100);
+					if (cur_pro > dis_pro) {
 						dis_pro = cur_pro;
 						System.out.println("Saved bytes of request file: " + content + "-->" + dis_pro + "%");
 					}
-					
+
 				}
-			}catch (IOException e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
 				in.close();
@@ -271,61 +271,73 @@ public class FTPClient {
 		}
 
 	}
-	
-	private String[] getLocalFiles() throws Exception{
+
+	private String[] getLocalFiles() throws Exception {
 		String localPath = PropertiesUtil.getProperty("ftp.client.file.save");
 		File file = new File(localPath);
 		isValidDirectory(file);
 		return this.localFileList = file.list();
 	}
-	
+
 	private void isValidDirectory(File file) {
-		if(!file.exists() || !file.canRead()) {
+		if (!file.exists() || !file.canRead()) {
 			throw new RuntimeException("Local folder cannot be found!");
 		}
 	}
-	
+
 	private void syncFilesWithRemote() throws InterruptedException, IOException {
+
 		List<String> filesToSync = new ArrayList<>();
-		
-		
-		for(String fileName : remoteFileList) {
-			if(!JunoArrayUtil.findElementInArray(fileName, localFileList)) {
-				filesToSync.add(fileName);
+
+		int retries = 2;
+
+		for (int i = 1; i <= retries && remoteFileList.isEmpty(); i++) {
+			System.out.println("Remote file list is empty, will retry " + i + " time in 1 second...");
+			Thread.sleep(1000);
+		}
+
+		if (remoteFileList.isEmpty()) {
+			System.out.println("Maybe remote file list is really empty, will recheck in next thread spin round.");
+		} else {
+			for (String fileName : remoteFileList) {
+				if (!JunoArrayUtil.findElementInArray(fileName, localFileList)) {
+					filesToSync.add(fileName);
+				}
+			}
+			if (filesToSync.isEmpty()) {
+				System.out.println("Auto sync: local is in sync with remote already, no files need to be pulled ...");
+				return;
 			}
 		}
-		if(filesToSync.isEmpty()) {
-			System.out.println("Auto sync: local is in sync with remote already, no files need to be pulled ...");
-			return;
-		}
-		//开始与服务器同步
-		//由于遍历时删除元素,必须使用Iterator
+
+		// 开始与服务器同步
+		// 由于遍历时删除元素,必须使用Iterator
 		Iterator<String> it = filesToSync.iterator();
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			String _fileName = it.next();
-			synchronized(PULL_LOCK) {
-				while(!readyForNextPull) {
+			synchronized (PULL_LOCK) {
+				while (!readyForNextPull) {
 					System.out.println("Thread is waiting to pull " + _fileName);
 					PULL_LOCK.wait();
 				}
 			}
-			//下载线程准备就绪，不允许同一客户多线程下载
+			// 下载线程准备就绪，不允许同一客户多线程下载
 			readyForNextPull = Boolean.FALSE;
 			System.out.println("Starting to pull " + _fileName);
-			String command = JunoStringBuilder.stringBuilder("$pull" + " " + _fileName); 
+			String command = JunoStringBuilder.stringBuilder("$pull" + " " + _fileName);
 			bufferedOutput.write(command.getBytes());
 			bufferedOutput.flush();
 		}
 	}
-	
-	class FilesSynchronizer implements Runnable{
+
+	class FilesSynchronizer implements Runnable {
 
 		@Override
 		public void run() {
 			try {
 				getLocalFiles();
 				System.out.println("Auto sync: retrieve remote files list ...");
-				while(bufferedOutput == null) {
+				while (bufferedOutput == null) {
 					Thread.yield();
 				}
 				bufferedOutput.write("$list".getBytes());
@@ -336,7 +348,7 @@ public class FTPClient {
 				e.printStackTrace();
 			}
 		}
-		
+
 	}
 
 }
