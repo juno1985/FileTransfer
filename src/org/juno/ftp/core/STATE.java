@@ -5,6 +5,8 @@ public enum STATE {
 	GROUPCHAT("110"),
 	//文件就绪等待pull
 	FILEREADY("120"),
+	//获取所有文件列表
+	FILELIST("130"),
 	//服务器端就绪
 	OK("200"),
 	NORESOURCE("404"),

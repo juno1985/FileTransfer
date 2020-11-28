@@ -11,8 +11,14 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.juno.ftp.com.PropertiesUtil;
@@ -28,9 +34,11 @@ public class FTPClient {
 	private Scanner scan;
 	CRLFLineReader lineReader;
 	ExecutorService pullFileThreadPool;
+	private CopyOnWriteArrayList<String> remoteFileList;
+	private List<String> localFileList;
 
 	public FTPClient(String param) {
-		if(param == null) {
+		if(param == null || param.isEmpty()) {
 			HOST = PropertiesUtil.getProperty("ftp.server.host");
 		}
 		else {
@@ -38,6 +46,8 @@ public class FTPClient {
 		}
 		PORT = Integer.parseInt(PropertiesUtil.getProperty("ftp.server.port"));
 		pullFileThreadPool = Executors.newCachedThreadPool();
+		remoteFileList = new CopyOnWriteArrayList<>();
+		localFileList = new ArrayList<>();
 	}
 
 
@@ -99,22 +109,45 @@ public class FTPClient {
 			// 提交任务到线程池下载文件
 			pullFileThreadPool.submit(new GetFileThread(pull_file_name, file_size));
 		} else {
-			for (int i = 1; i < resp.length; i++) {
-				String out = resp[i];
-				
-				String[] files = out.split("\r", -1);
-				
-				for(String display: files) {
-					if(display.isEmpty()) continue;
-					System.out.println(display);
-				}
-				/*
-				 * if (out.startsWith("\r") || out.startsWith("\n")) {
-				 * System.out.println(out.substring(1)); } else System.out.println(resp[i]);
-				 */
+			//存放收到信息并去掉\r
+			List<String> __decodedResp = new ArrayList<>();
+			displayReceivedContent(resp, __decodedResp);
+			displayCollection(__decodedResp);
+			if(resp_code.equals(STATE.FILELIST.getCode())) {
+				refreshRemoteFileList(__decodedResp);
 			}
 		}
-
+	}
+	//刷新remote file list
+	private void refreshRemoteFileList(List<String> currentFileList) {
+		remoteFileList.clear();
+		remoteFileList.addAll(currentFileList);
+	}
+	
+	//显示集合
+	private  <E> void  displayCollection(Collection<E> col) {
+		if(col instanceof List) {
+			for(E e : col) {
+				System.out.println(e.toString());
+			}
+		}else if(col instanceof Set) {
+			Iterator<E> it = col.iterator();
+			while(it.hasNext()) {
+				System.out.println(it.next().toString());
+			}
+		}
+	}
+	
+	//处理掉'\r'
+	private void displayReceivedContent(String[] resp, List<String> __decodedResp) {
+		for (int i = 1; i < resp.length; i++) {
+			String out = resp[i];
+			String[] arr = out.split("\r", -1);
+			for(String str: arr) {
+				if(str.isEmpty()) continue;
+				__decodedResp.add(str);
+			}
+		}
 	}
 
 	// 读取网络数据

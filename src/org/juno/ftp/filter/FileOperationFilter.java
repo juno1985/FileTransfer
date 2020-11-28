@@ -53,7 +53,7 @@ public class FileOperationFilter implements ChainFilter {
 			if (fileNames == null) {
 				taskResource.getParams().add(STATE.NORESOURCE.getCode() + " The request folder dosenot exist");
 			} else {
-				taskResource.getParams().add(STATE.OK.getCode() + " ");
+				taskResource.getParams().add(STATE.FILELIST.getCode() + " ");
 				for (String fileName : fileNames) {
 					taskResource.getParams().add(fileName);
 				}
