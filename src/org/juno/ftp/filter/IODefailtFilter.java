@@ -80,25 +80,25 @@ public class IODefailtFilter implements ChainFilter {
 		long startTime = System.currentTimeMillis();
 		long transferredSize = 0L;
 		try {
-			while(true) {
-				//read data
-				
-					int count = buffIn.read(buff);
-					
-					if(count == -1) {
-						break;
-					}
-					
-					buffOut.write(buff, 0, count);
-					
-					transferredSize += count;
-				
+			while (true) {
+				// read data
+
+				int count = buffIn.read(buff);
+
+				if (count == -1) {
+					break;
+				}
+
+				buffOut.write(buff, 0, count);
+
+				transferredSize += count;
+
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			if(buffOut != null) {
+			if (buffOut != null) {
 				buffOut.flush();
 			}
 			in.close();
@@ -107,8 +107,9 @@ public class IODefailtFilter implements ChainFilter {
 			buffOut.close();
 		}
 		long endTime = System.currentTimeMillis();
-		long consumeTime = (endTime - startTime)/1000;
-		LogUtil.info(Thread.currentThread().getName() + " send " + transferredSize + " bytes in " + consumeTime + " seconds.");
+		long consumeTime = (endTime - startTime) / 1000;
+		LogUtil.info(Thread.currentThread().getName() + " send " + transferredSize + " bytes in " + consumeTime
+				+ " seconds.");
 	}
 
 	private FileInputStream createFileInputStream(File file) throws IOException {
@@ -131,13 +132,14 @@ public class IODefailtFilter implements ChainFilter {
 			InetSocketAddress remoteAddress = (InetSocketAddress) session.getClientAddress();
 			dataSoc = new Socket();
 			dataSoc.setReuseAddress(true);
-			//以下两种连接任选其一
+			// 以下两种连接任选其一
 			// 1
 			SocketAddress localSocketAddress = new InetSocketAddress(localAdrr, 0);
 			// 2
-			//SocketAddress localSocketAddress = new InetSocketAddress(0);
-			LogUtil.info("Binding active data connection to : " + localSocketAddress);
+			// SocketAddress localSocketAddress = new InetSocketAddress(0);
+
 			dataSoc.bind(localSocketAddress);
+			LogUtil.info("Connecting to remote: " + remoteAddress.getAddress() + " : " + remotePort);
 			dataSoc.connect(new InetSocketAddress(remoteAddress.getAddress(), Integer.parseInt(remotePort)));
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
