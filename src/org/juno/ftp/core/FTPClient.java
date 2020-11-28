@@ -58,7 +58,7 @@ public class FTPClient {
 		pullFileThreadPool = Executors.newCachedThreadPool();
 		remoteFileList = new CopyOnWriteArrayList<>();
 		scheduledService = Executors.newSingleThreadScheduledExecutor();
-		scheduledService.scheduleWithFixedDelay(new FilesSynchronizer(), 0, 1, TimeUnit.MINUTES);
+		scheduledService.scheduleWithFixedDelay(new FilesSynchronizer(), 1, 1, TimeUnit.MINUTES);
 	}
 
 
@@ -125,7 +125,6 @@ public class FTPClient {
 			displayReceivedContent(resp, __decodedResp);
 			displayCollection(__decodedResp);
 			if(resp_code.equals(STATE.FILELIST.getCode())) {
-				System.out.println("@@@@@@@@@@");
 				refreshRemoteFileList(__decodedResp);
 			}
 		}
@@ -134,8 +133,6 @@ public class FTPClient {
 	private void refreshRemoteFileList(List<String> currentFileList) {
 		remoteFileList.clear();
 		remoteFileList.addAll(currentFileList);
-		System.out.println("MMMMMMMMMMMMMMMMMMMM");
-		displayCollection(remoteFileList);
 	}
 	
 	//显示集合
@@ -205,8 +202,6 @@ public class FTPClient {
 
 		@Override
 		public String call() throws Exception {
-			//下载线程准备就绪，不允许同一客户多线程下载
-			readyForNextPull = Boolean.FALSE;
 
 			int port = serverSocket.getLocalPort();
 
@@ -226,7 +221,7 @@ public class FTPClient {
 						String saveFullPath = PropertiesUtil.getProperty("ftp.client.file.save") + "\\" + fileName;
 						File file = new File(saveFullPath);
 						FileOutputStream fileOut = new FileOutputStream(file);
-						copyStream(in, fileOut, fileSize);
+						copyStream(in, fileOut, fileSize, fileName);
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -245,7 +240,7 @@ public class FTPClient {
 			return null;
 		}
 
-		private void copyStream(InputStream in, OutputStream fileOut, long size) throws IOException {
+		private void copyStream(InputStream in, OutputStream fileOut, long size, String content) throws IOException {
 			BufferedInputStream buffIn = new BufferedInputStream(in);
 			int numBytes;
 			long total = 0L;
@@ -262,7 +257,7 @@ public class FTPClient {
 					cur_pro = (int)(((double)total/size)*100);
 					if(cur_pro > dis_pro) {
 						dis_pro = cur_pro;
-						System.out.println("Saved bytes of request file: " + dis_pro + "%");
+						System.out.println("Saved bytes of request file: " + content + "-->" + dis_pro + "%");
 					}
 					
 				}
@@ -294,16 +289,6 @@ public class FTPClient {
 		List<String> filesToSync = new ArrayList<>();
 		
 		
-		
-		System.out.println("remote...");
-		displayCollection(remoteFileList);
-		System.out.println("local...");
-		for(String s : localFileList)
-			System.out.println(s);
-		
-		
-		
-		
 		for(String fileName : remoteFileList) {
 			if(!JunoArrayUtil.findElementInArray(fileName, localFileList)) {
 				filesToSync.add(fileName);
@@ -324,6 +309,8 @@ public class FTPClient {
 					PULL_LOCK.wait();
 				}
 			}
+			//下载线程准备就绪，不允许同一客户多线程下载
+			readyForNextPull = Boolean.FALSE;
 			System.out.println("Starting to pull " + _fileName);
 			String command = JunoStringBuilder.stringBuilder("$pull" + " " + _fileName); 
 			bufferedOutput.write(command.getBytes());
