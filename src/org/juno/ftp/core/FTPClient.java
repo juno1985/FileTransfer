@@ -204,7 +204,7 @@ public class FTPClient {
 
 			int port = serverSocket.getLocalPort();
 
-			final String PULL_REQUEST = "$pull1" + " " + fileName + " " + port;
+			final String PULL_REQUEST = JunoStringBuilder.stringBuilder("$pull1" + " " + fileName + " " + port);
 
 			// 发送到服务器
 			send(PULL_REQUEST);
@@ -307,6 +307,9 @@ public class FTPClient {
 				return;
 			}
 		}
+		
+		//防止work下载线程异常,没有设置成TRUE
+		readyForNextPull = Boolean.TRUE;
 
 		// 开始与服务器同步
 		// 由于遍历时删除元素,必须使用Iterator
@@ -316,7 +319,8 @@ public class FTPClient {
 			synchronized (PULL_LOCK) {
 				while (!readyForNextPull) {
 					System.out.println("Thread is waiting to pull " + _fileName);
-					PULL_LOCK.wait();
+					//防止work下载线程异常,没有notify,所以设置wait时间
+					PULL_LOCK.wait(1000 * 60);
 				}
 			}
 			// 下载线程准备就绪，不允许同一客户多线程下载
@@ -325,15 +329,22 @@ public class FTPClient {
 			String command = JunoStringBuilder.stringBuilder("$pull" + " " + _fileName);
 			send(command);
 		}
+
+		remoteFileList.clear();
 	}
-	//发送到服务器端,由于可能多线程同时操作一个bufferedouput对象,所以使用锁
+
+	// 发送到服务器端,由于可能多线程同时操作一个bufferedouput对象,所以使用锁
 	private synchronized void send(String str) throws IOException {
 		try {
 			bufferedOutput.write(str.getBytes());
+			System.out.println("debug infor-client sent: " + str);
+		} catch (Exception ex) {
+			System.out.println("Send command error: " + ex.getMessage());
+			ex.printStackTrace();
 		} finally {
 			bufferedOutput.flush();
 		}
-	
+
 	}
 
 	class FilesSynchronizer implements Runnable {
