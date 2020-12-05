@@ -229,12 +229,13 @@ public class FTPClient {
 				}
 			} finally {
 				socket.close();
+				synchronized (PULL_LOCK) {
+					// 下载完成,如果有后续下载请求可以排队处理
+					readyForNextPull = Boolean.TRUE;
+					PULL_LOCK.notifyAll();
+				}
 			}
-			synchronized (PULL_LOCK) {
-				// 下载完成,如果有后续下载请求可以排队处理
-				readyForNextPull = Boolean.TRUE;
-				PULL_LOCK.notifyAll();
-			}
+			
 			return null;
 		}
 
