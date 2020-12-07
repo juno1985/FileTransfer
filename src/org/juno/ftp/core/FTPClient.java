@@ -175,7 +175,8 @@ public class FTPClient {
 					process(decode_resp);
 				} catch (IOException e) {
 
-					e.printStackTrace();
+					System.out.println("Connection interupted! Cannot read data from server!");
+					return;
 				}
 
 			}
@@ -261,6 +262,7 @@ public class FTPClient {
 
 				}
 			} catch (IOException e) {
+				System.out.println("Connection interupted! File Saving Failed!");
 				e.printStackTrace();
 			} finally {
 				in.close();
@@ -338,7 +340,7 @@ public class FTPClient {
 	private synchronized void send(String str) throws IOException {
 		try {
 			bufferedOutput.write(str.getBytes());
-			System.out.println("debug infor-client sent: " + str);
+	//		System.out.println("debug infor-client sent: " + str);
 		} catch (Exception ex) {
 			System.out.println("Send command error: " + ex.getMessage());
 			ex.printStackTrace();
