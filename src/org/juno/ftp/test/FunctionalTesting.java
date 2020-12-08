@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.junit.Test;
+import org.juno.ftp.com.TotalPullSizeFileWriter;
 import org.juno.ftp.core.FTPClient;
 import org.juno.ftp.core.FTPServer;
 import org.juno.ftp.log.LogUtil;
@@ -63,4 +64,14 @@ public class FunctionalTesting {
 		executorService.shutdown();
 	}
 	
+	@Test
+	public void testTotalPullSizeFileWriter() {
+		TotalPullSizeFileWriter.write(1234567890L);
+	}
+	
+	@Test
+	public void testTotalPullSizeFileRead(){
+		Long ll = TotalPullSizeFileWriter.read();
+		System.out.println(ll);
+	}
 }

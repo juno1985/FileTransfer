@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.juno.ftp.com.PropertiesUtil;
+import org.juno.ftp.com.SystemContext;
 import org.juno.ftp.log.LogUtil;
 
 public class FTPServer {
@@ -54,6 +55,10 @@ public class FTPServer {
 			int maxPoolSize = Runtime.getRuntime().availableProcessors();
 			executorProcessor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, 
 					10, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new JunoThreadFactory("NioProcessor"), new ThreadPoolExecutor.CallerRunsPolicy());
+			
+			SystemContext.initTotalSize();
+			LogUtil.info("System loads TOTAL PULL SIZE: " + SystemContext.getTotalSize());
+			
 			selector = Selector.open();
 		} catch (IOException e) {
 			LogUtil.warning(e.getMessage());
